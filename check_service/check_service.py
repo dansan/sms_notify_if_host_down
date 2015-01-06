@@ -12,17 +12,15 @@ class Check_service(object):
     Base class for service check classes.
     '''
 
-    def __init__(self, host, port, protocol="TCP", verbose=0):
+    def __init__(self, host, port, protocol="TCP"):
         '''
         :param str host: FQDN or IP
         :param integer port: port
-        :param integer verbose: print debug information to stdout
         :param str protocol: protocol to use (default is TCP)
         '''
         self.host = host
         self.port = port
         self.protocol = protocol
-        self.verbose = verbose
 
     def run(self):
         '''

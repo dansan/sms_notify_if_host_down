@@ -12,16 +12,14 @@ class Send_SMS(object):
     Base class for SMS sending function.
     '''
 
-    def __init__(self, username, password, verbose=False):
+    def __init__(self, username, password):
         '''
         :param str destination: phone number (RFC3824), starting with country code (e.g. 4917712345678)
         :param str message: the message
-        :param integer verbose: print information to stdout
         :raises Exception: if there was an error connecting (wrong username/password)
         '''
         self.username = username
         self.password = password
-        self.verbose = verbose
 
     def send(self, destination, message):
         '''

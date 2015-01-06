@@ -10,6 +10,9 @@ generic_tcp_connect -- trys to connect toa TCP socket
 
 from check_service import Check_service
 import socket
+import logging
+
+logger = logging.getLogger()
 
 
 class Generic_TCP_connect(Check_service):
@@ -23,16 +26,13 @@ class Generic_TCP_connect(Check_service):
         :return: True if success
         :rtype: bool
         '''
-        if self.verbose > 0:
-            print("Connecting to '%s', port %d, TCP..." % (self.host, self.port))
+        logger.debug("Connecting to '%s', port %d, TCP...", self.host, self.port)
         try:
             s = socket.create_connection(address=(self.host, self.port), timeout=10)
             s.close()
             success = True
         except Exception, e:
             success = False
-            if self.verbose > 0:
-                print("Could not connect: %s" % str(e))
-        if self.verbose > 0:
-            print("... connected: %s" % str(success))
+            logger.debug("Could not connect: %s", e)
+        logger.debug("... connected: %s", success)
         return success

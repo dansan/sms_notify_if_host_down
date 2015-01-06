@@ -6,32 +6,36 @@
 @contact:    daniel@admin-box.com
 '''
 import xmlrpclib
+import logging
 from send_sms import Send_SMS
+
+logger = logging.getLogger()
 
 
 class Sipgate_SMS(Send_SMS):
+
     '''
     Send a text message to a cell phone via SIP provider sipgate.
     '''
-    def __init__(self, username, password, verbose=False):
+
+    def __init__(self, username, password):
         '''
         :param str destination: phone number (RFC3824), starting with country code (e.g. 4917712345678) 
         :param str message: the message
-        :param integer verbose: print information to stdout
         :raises xmlrpclib.ProtocolError: if there was an error connecting (wrong username/password)
         '''
-        super(Sipgate_SMS, self).__init__(username, password, verbose)
+        super(Sipgate_SMS, self).__init__(username, password)
 
-        if self.verbose:
-            print "Connecting to https://%s:xxxxxxxx@samurai.sipgate.net/RPC2" % self.username
+        logger.debug("Connecting to https://%s:xxxxxxxx@samurai.sipgate.net/RPC2", self.username)
 
         XMLRPC_URL = "https://%s:%s@samurai.sipgate.net/RPC2" % (self.username, self.password)
         self.rpc_srv = xmlrpclib.ServerProxy(XMLRPC_URL)
         reply = self.rpc_srv.samurai.ClientIdentify(
-            {"ClientName": "sms_notify_if_host_down (python xmlrpclib)", "ClientVersion": "0.1", "ClientVendor": "https://github.com/dansan/sms_notify_if_host_down/"})
+            {"ClientName": "sms_notify_if_host_down (python xmlrpclib)", "ClientVersion": "0.1",
+             "ClientVendor": "https://github.com/dansan/sms_notify_if_host_down/"})
 
-        if self.verbose:
-            print "Login success. Server reply to ClientIdentify(): '%s'" % reply
+        logger.debug(
+            "Login success. Server reply to ClientIdentify(): '%s'", reply)
 
     def send(self, destination, message):
         '''
@@ -49,5 +53,4 @@ class Sipgate_SMS(Send_SMS):
         reply = self.rpc_srv.samurai.SessionInitiate(
             {"RemoteUri": "sip:%s@sipgate.de" % destination, "TOS": "text", "Content": message})
 
-        if self.verbose:
-            print "SMS send success. Server reply to SessionInitiate(): '%s'" % reply
+        logger.debug("SMS send success. Server reply to SessionInitiate(): '%s'", reply)

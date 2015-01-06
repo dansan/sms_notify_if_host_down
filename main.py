@@ -15,9 +15,8 @@ main is the start module to run the checks and react to downtime.
 import sys
 import os
 import re
-
-from argparse import ArgumentParser
-from argparse import RawDescriptionHelpFormatter
+import logging
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 from check_service.generic_tcp_connect import Generic_TCP_connect
 
@@ -27,6 +26,9 @@ __date__ = '2015-01-06'
 __updated__ = '2015-01-06'
 
 DEBUG = 0
+LOGFILE = '/tmp/sms_notify.log'
+
+logger = logging.getLogger()
 
 
 def main(argv=None):  # IGNORE:C0111
@@ -37,6 +39,23 @@ def main(argv=None):  # IGNORE:C0111
     else:
         sys.argv.extend(argv)
 
+    args, services = parse_cmd_line()
+
+    logger.info("Starting with parameters '%s' to check on services '%s'.", args, services)
+
+    results = list()
+    for service in services:
+        gtc = Generic_TCP_connect(service["host"], service["port"], "TCP")
+        success = gtc.run()
+        results.append(success)
+        logger.debug("Host: %s Port: %s Success: %s", service["host"], service["port"], success)
+        if not success and not args.forceallchecks:
+            break
+
+    return int(not all(results))
+
+
+def parse_cmd_line():
     program_name = os.path.basename(sys.argv[0])
     program_version = "v%s" % __version__
     program_build_date = str(__updated__)
@@ -62,9 +81,10 @@ USAGE
         parser = ArgumentParser(
             description=program_license, formatter_class=RawDescriptionHelpFormatter)
         parser.add_argument('-f', '--forceallchecks', action='store_true',
-                            help="set verbosity level [default: %(default)s]")
+                            help="do not stop running checks after the first one fails [default: %(default)s]")
+        parser.add_argument('-l', '--logfile', help="set logfile [default: '%s']" % LOGFILE)
         parser.add_argument("-v", "--verbose", dest="verbose",
-                            action="count", help="set verbosity level [default: %(default)s]")
+                            action="store_true", help="enable noise on the console [default: %(default)s]")
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
         parser.add_argument(
             dest="services", help="TCP service to check in format host:port or IP:port",
@@ -72,33 +92,6 @@ USAGE
 
         # Process arguments
         args = parser.parse_args()
-
-        services = list()
-
-        for service in args.services:
-            # check service format, even if socket class does it too...
-            try:
-                host, port = service.split(":")
-            except:
-                parser.error("Invalid service '%s'." % service)
-
-            if is_valid_service(host, port, parser):
-                port = int(port)
-                services.append({"host": host, "port": port})
-
-        results = list()
-        for service in services:
-            gtc = Generic_TCP_connect(service["host"], service["port"], "TCP", args.verbose)
-            success = gtc.run()
-            results.append(success)
-            if args.verbose > 0:
-                print("Host: %s Port: %s Success: %s" % (service["host"].ljust(20),
-                                                         str(service["port"]).rjust(5),
-                                                         str(success)))
-            if not success and not args.forceallchecks:
-                break
-
-        return int(not all(results))
     except KeyboardInterrupt:
         # handle keyboard interrupt
         return 0
@@ -109,6 +102,38 @@ USAGE
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
         sys.stderr.write(indent + "  for help use --help")
         return 2
+
+    setup_logging(args)
+
+    services = list()
+    for service in args.services:
+        # check service format, even if socket class does it too...
+        try:
+            host, port = service.split(":")
+        except:
+            parser.error("Invalid service '%s'." % service)
+
+        if is_valid_service(host, port, parser):
+            port = int(port)
+            services.append({"host": host, "port": port})
+
+    return args, services
+
+
+def setup_logging(args):
+    logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler(args.logfile or LOGFILE)
+    fh.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    if args.verbose:
+        ch.setLevel(logging.DEBUG)
+    else:
+        ch.setLevel(logging.INFO)
+    formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-5s %(module)s.%(funcName)s:%(lineno)d  %(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
 
 
 def is_valid_service(host, port, parser):
