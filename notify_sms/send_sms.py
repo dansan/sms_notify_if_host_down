@@ -6,6 +6,7 @@
 @contact:    daniel@admin-box.com
 '''
 
+
 class Send_SMS(object):
     '''
     Base class for SMS sending function.
@@ -13,8 +14,9 @@ class Send_SMS(object):
 
     def __init__(self, username, password, verbose=False):
         '''
-        :param str destination: phone number (RFC3824), starting with country code (e.g. 4917712345678) 
+        :param str destination: phone number (RFC3824), starting with country code (e.g. 4917712345678)
         :param str message: the message
+        :param integer verbose: print information to stdout
         :raises Exception: if there was an error connecting (wrong username/password)
         '''
         self.username = username
@@ -25,7 +27,7 @@ class Send_SMS(object):
         '''
         This function can be called multiple times.
 
-        :param str destination: phone number (RFC3824), starting with country code (e.g. 4917712345678) 
+        :param str destination: phone number (RFC3824), starting with country code (e.g. 4917712345678)
         :param str message: the message, max 160 characters
         :return: True if success
         :rtype: bool

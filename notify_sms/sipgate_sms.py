@@ -10,15 +10,14 @@ from send_sms import Send_SMS
 
 
 class Sipgate_SMS(Send_SMS):
-
     '''
-    Send a text message to a cell phone via SIP provider sipgate. 
+    Send a text message to a cell phone via SIP provider sipgate.
     '''
-
     def __init__(self, username, password, verbose=False):
         '''
         :param str destination: phone number (RFC3824), starting with country code (e.g. 4917712345678) 
         :param str message: the message
+        :param integer verbose: print information to stdout
         :raises xmlrpclib.ProtocolError: if there was an error connecting (wrong username/password)
         '''
         super(Sipgate_SMS, self).__init__(username, password, verbose)
@@ -32,7 +31,7 @@ class Sipgate_SMS(Send_SMS):
             {"ClientName": "sms_notify_if_host_down (python xmlrpclib)", "ClientVersion": "0.1", "ClientVendor": "https://github.com/dansan/sms_notify_if_host_down/"})
 
         if self.verbose:
-            print "Login success. Server reply to ClientIdentify(): '%s'"%reply
+            print "Login success. Server reply to ClientIdentify(): '%s'" % reply
 
     def send(self, destination, message):
         '''
@@ -51,4 +50,4 @@ class Sipgate_SMS(Send_SMS):
             {"RemoteUri": "sip:%s@sipgate.de" % destination, "TOS": "text", "Content": message})
 
         if self.verbose:
-            print "SMS send success. Server reply to SessionInitiate(): '%s'"%reply
+            print "SMS send success. Server reply to SessionInitiate(): '%s'" % reply
