@@ -57,4 +57,5 @@ class Sipgate_SMS(Send_SMS):
         reply = self.rpc_srv.samurai.SessionInitiate(
             {"RemoteUri": "sip:%s@sipgate.de" % destination, "TOS": "text", "Content": message})
 
-        logger.debug("SMS send success. Server reply to SessionInitiate(): '%s'", reply)
+        logger.info("Success sending '%s' to '%s'.", message, destination)
+        logger.debug("Server reply to SessionInitiate(): '%s'", reply)

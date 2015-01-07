@@ -41,7 +41,7 @@ def main(argv=None):  # IGNORE:C0111
 
     args, services = parse_cmd_line()
 
-    logger.info("Starting with parameters '%s' to check on services '%s'.", args, services)
+    logger.debug("Starting with parameters '%s' to check on services '%s'.", args, services)
 
     results = list()
     for service in services:
@@ -82,6 +82,8 @@ USAGE
         parser.add_argument('-f', '--forceallchecks', action='store_true',
                             help="do not stop running checks after the first one fails [default: %(default)s]")
         parser.add_argument('-l', '--logfile', help="set logfile [default: '%s']" % LOGFILE)
+        parser.add_argument("-q", "--quiet", dest="quiet", action="store_true",
+                            help="only show errors on the console [default: %(default)s]")
         parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
                             help="enable noise on the console [default: %(default)s]")
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
@@ -122,26 +124,29 @@ def setup_logging(args):
     logger.setLevel(logging.DEBUG)
     fh = logging.FileHandler(args.logfile or LOGFILE)
     fh.setLevel(logging.INFO)
-    ch = logging.StreamHandler()
-    if args.verbose:
-        ch.setLevel(logging.DEBUG)
-    else:
-        ch.setLevel(logging.INFO)
     formatter = logging.Formatter(
         fmt='%(asctime)s %(levelname)-5s %(module)s.%(funcName)s:%(lineno)d  %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S')
     fh.setFormatter(formatter)
     logger.addHandler(fh)
+
+    ch = logging.StreamHandler()
+    if args.verbose:
+        ch.setLevel(logging.DEBUG)
+    elif args.quiet:
+        ch.setLevel(logging.ERROR)
+    else:
+        ch.setLevel(logging.INFO)
     logger.addHandler(ch)
 
 
 def is_valid_service(host, port, parser):
     try:
         port = int(port)
-        if port > 65535:
-            raise ValueError("Invalid port number '%d'." % port)
     except:
         parser.error("Invalid port '%s'." % port)
+    if port > 65535 or port < 1:
+        raise ValueError("Invalid port number '%d'." % port)
     # https://stackoverflow.com/questions/11264005/using-a-regex-to-match-ip-addresses-in-python
     pat = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
     is_ip = pat.match(host)
