@@ -17,6 +17,7 @@ import os
 import re
 import logging
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+import daemon
 
 from check_service.generic_tcp_connect import Generic_TCP_connect
 from notify_sms.sipgate_sms import Sipgate_SMS
@@ -41,9 +42,26 @@ def main(argv=None):  # IGNORE:C0111
         sys.argv.extend(argv)
 
     args, services = parse_cmd_line()
+    setup_logging(args)
 
     logger.debug("Starting with parameters '%s' to check on services '%s'.", args, services)
 
+    if args.daemonize:
+        daemon_context = daemon.DaemonContext()
+        daemon_context.files_preserve = [lh.stream for lh in logger.handlers]
+        daemon_context.open()
+    try:
+        results = run_checks(args, services)
+        failed_services = reduce(lambda x, y: x+y, [int(x[0]) for x in results], 0)
+        if failed_services >= args.threshold:
+            notify(results, services, args)
+        return failed_services
+    except Exception, e:
+        logger.exception("Running checks or notifying.")
+        raise e
+
+
+def run_checks(args, services):
     results = list()
     for service in services:
         gtc = Generic_TCP_connect(service["host"], service["port"], "TCP")
@@ -52,22 +70,21 @@ def main(argv=None):  # IGNORE:C0111
         logger.debug("Host: %s Port: %s Success: %s", service["host"], service["port"], success)
         if not success and not args.forceallchecks:
             break
+    return results
 
-    failed_services = int(not all([x[0] for x in results]))
 
-    if failed_services > 0:
-        msg = "Service(s) failed: %s" % " ".join(["%s:%d(%s)" % (x[1], x[2], x[3]) for x in results if not x[0]])
-        if len(results) < len(services):
-            msg += " (%d checks not run)" % (len(services) - len(results))
-        logger.info(msg)
-        ssms = Sipgate_SMS(args.username, args.password)
-        for msg_slice in range(0, len(msg), 160):
-            message = args.mobile, msg[msg_slice:msg_slice + 160]
-            if args.test:
-                logger.info("Test run - not sending SMS: >>%s<<", message)
-            else:
-                ssms.send(message)
-    return failed_services
+def notify(results, services, args):
+    msg = "Service(s) failed: %s" % " ".join(["%s:%d(%s)" % (x[1], x[2], x[3]) for x in results if not x[0]])
+    if len(results) < len(services):
+        msg += " (%d checks not run)" % (len(services) - len(results))
+    logger.info(msg)
+    ssms = Sipgate_SMS(args.username, args.password)
+    for msg_slice in range(0, len(msg), 160):
+        message = args.mobile, msg[msg_slice:msg_slice + 160]
+        if args.test:
+            logger.info("Test run - not sending SMS: >>%s<<", message)
+        else:
+            ssms.send(message)
 
 
 def parse_cmd_line():
@@ -94,6 +111,10 @@ USAGE
         # Setup argument parser
         parser = ArgumentParser(
             description=program_license, formatter_class=RawDescriptionHelpFormatter)
+        parser.add_argument("-d", "--daemonize", action="store_true",
+                            help="run in background [default: %(default)s]")
+        parser.add_argument('-e', '--threshold', help="notify only if at least x tests fail [default: %(default)s]",
+                            type=int, default=1)
         parser.add_argument('-f', '--forceallchecks', action='store_true',
                             help="do not stop running checks after the first one fails [default: %(default)s]")
         parser.add_argument('-l', '--logfile', help="set logfile [default: %(default)s]", default=LOGFILE)
@@ -125,8 +146,6 @@ USAGE
         sys.stderr.write(indent + "  for help use --help")
         return 2
 
-    setup_logging(args)
-
     services = list()
     for service in args.services:
         # check service format, even if socket class does it too...
@@ -147,6 +166,7 @@ def setup_logging(args):
 
     ch = logging.StreamHandler()
     fh = logging.FileHandler(args.logfile)
+
     formatter = logging.Formatter(
         fmt='%(asctime)s %(levelname)-5s %(module)s.%(funcName)s:%(lineno)d  %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S')
