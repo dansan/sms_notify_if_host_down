@@ -96,13 +96,14 @@ USAGE
             description=program_license, formatter_class=RawDescriptionHelpFormatter)
         parser.add_argument('-f', '--forceallchecks', action='store_true',
                             help="do not stop running checks after the first one fails [default: %(default)s]")
-        parser.add_argument('-l', '--logfile', help="set logfile [default: '%s']" % LOGFILE)
-        parser.add_argument("-q", "--quiet", action="store_true",
-                            help="show errors only on the console [default: %(default)s]")
+        parser.add_argument('-l', '--logfile', help="set logfile [default: %(default)s]", default=LOGFILE)
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument("-q", "--quiet", action="store_true",
+                           help="show errors only on the console [default: %(default)s]")
         parser.add_argument("-t", "--test", action="store_true",
                             help="test run - don't send SMS [default: %(default)s]")
-        parser.add_argument("-v", "--verbose", action="store_true",
-                            help="enable noise on the console [default: %(default)s]")
+        group.add_argument("-v", "--verbose", action="store_true",
+                           help="enable noise on the console [default: %(default)s]")
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
         parser.add_argument("username", help="SIP account username")
         parser.add_argument("password", help="SIP account password")
@@ -145,7 +146,7 @@ def setup_logging(args):
     logger.setLevel(logging.DEBUG)
 
     ch = logging.StreamHandler()
-    fh = logging.FileHandler(args.logfile or LOGFILE)
+    fh = logging.FileHandler(args.logfile)
     formatter = logging.Formatter(
         fmt='%(asctime)s %(levelname)-5s %(module)s.%(funcName)s:%(lineno)d  %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S')
