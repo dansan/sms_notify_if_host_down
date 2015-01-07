@@ -82,11 +82,17 @@ USAGE
         parser.add_argument('-f', '--forceallchecks', action='store_true',
                             help="do not stop running checks after the first one fails [default: %(default)s]")
         parser.add_argument('-l', '--logfile', help="set logfile [default: '%s']" % LOGFILE)
-        parser.add_argument("-q", "--quiet", dest="quiet", action="store_true",
-                            help="only show errors on the console [default: %(default)s]")
-        parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
+        parser.add_argument("-q", "--quiet", action="store_true",
+                            help="show errors only on the console [default: %(default)s]")
+        parser.add_argument("-t", "--test", action="store_true",
+                            help="test run - don't send SMS [default: %(default)s]")
+        parser.add_argument("-v", "--verbose", action="store_true",
                             help="enable noise on the console [default: %(default)s]")
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
+        parser.add_argument("username", help="SIP account username")
+        parser.add_argument("password", help="SIP account password")
+        parser.add_argument(
+            "mobile", help="mobile phone number to send SMS to (starting with country code, e.g. 4917712345678)")
         parser.add_argument(
             dest="services", help="TCP service to check in format host:port or IP:port", metavar="service", nargs='+')
 
@@ -122,22 +128,25 @@ USAGE
 
 def setup_logging(args):
     logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
     fh = logging.FileHandler(args.logfile or LOGFILE)
-    fh.setLevel(logging.INFO)
     formatter = logging.Formatter(
         fmt='%(asctime)s %(levelname)-5s %(module)s.%(funcName)s:%(lineno)d  %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S')
     fh.setFormatter(formatter)
-    logger.addHandler(fh)
 
-    ch = logging.StreamHandler()
     if args.verbose:
         ch.setLevel(logging.DEBUG)
+        fh.setLevel(logging.DEBUG)
     elif args.quiet:
         ch.setLevel(logging.ERROR)
+        fh.setLevel(logging.INFO)
     else:
         ch.setLevel(logging.INFO)
+        fh.setLevel(logging.INFO)
+
     logger.addHandler(ch)
+    logger.addHandler(fh)
 
 
 def is_valid_service(host, port, parser):
