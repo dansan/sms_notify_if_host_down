@@ -34,14 +34,13 @@ class Sipgate_SMS(Send_SMS):
             {"ClientName": "sms_notify_if_host_down (python xmlrpclib)", "ClientVersion": "0.1",
              "ClientVendor": "https://github.com/dansan/sms_notify_if_host_down/"})
 
-        logger.debug(
-            "Login success. Server reply to ClientIdentify(): '%s'", reply)
+        logger.debug("Login success. Server reply to ClientIdentify(): '%s'", reply)
 
     def send(self, destination, message):
         '''
         This function can be called multiple times.
 
-        :param str destination: phone number (RFC3824), starting with country code (e.g. 4917712345678) 
+        :param str destination: phone number (RFC3824), starting with country code (e.g. 4917712345678)
         :param str message: the message, max 160 characters
         :return: True if success
         :rtype: bool

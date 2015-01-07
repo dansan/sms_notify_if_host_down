@@ -16,9 +16,11 @@ logger = logging.getLogger()
 
 
 class Generic_TCP_connect(Check_service):
+
     '''
     trys to connect to a TCP socket
     '''
+
     def run(self):
         '''
         Runs the check, raises no exception.

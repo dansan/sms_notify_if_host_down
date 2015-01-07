@@ -8,6 +8,7 @@
 
 
 class Check_service(object):
+
     '''
     Base class for service check classes.
     '''

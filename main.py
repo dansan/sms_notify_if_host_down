@@ -23,7 +23,7 @@ from check_service.generic_tcp_connect import Generic_TCP_connect
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-01-06'
-__updated__ = '2015-01-06'
+__updated__ = '2015-01-07'
 
 DEBUG = 0
 LOGFILE = '/tmp/sms_notify.log'
@@ -59,8 +59,7 @@ def parse_cmd_line():
     program_name = os.path.basename(sys.argv[0])
     program_version = "v%s" % __version__
     program_build_date = str(__updated__)
-    program_version_message = '%%(prog)s %s (%s)' % (
-        program_version, program_build_date)
+    program_version_message = '%%(prog)s %s (%s)' % (program_version, program_build_date)
     program_shortdesc = __import__('__main__').__doc__.split("\n")[1]
     program_license = '''%s
 
@@ -83,12 +82,11 @@ USAGE
         parser.add_argument('-f', '--forceallchecks', action='store_true',
                             help="do not stop running checks after the first one fails [default: %(default)s]")
         parser.add_argument('-l', '--logfile', help="set logfile [default: '%s']" % LOGFILE)
-        parser.add_argument("-v", "--verbose", dest="verbose",
-                            action="store_true", help="enable noise on the console [default: %(default)s]")
+        parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
+                            help="enable noise on the console [default: %(default)s]")
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
         parser.add_argument(
-            dest="services", help="TCP service to check in format host:port or IP:port",
-            metavar="service", nargs='+')
+            dest="services", help="TCP service to check in format host:port or IP:port", metavar="service", nargs='+')
 
         # Process arguments
         args = parser.parse_args()
@@ -129,8 +127,9 @@ def setup_logging(args):
         ch.setLevel(logging.DEBUG)
     else:
         ch.setLevel(logging.INFO)
-    formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-5s %(module)s.%(funcName)s:%(lineno)d  %(message)s',
-                                  datefmt='%Y-%m-%d %H:%M:%S')
+    formatter = logging.Formatter(
+        fmt='%(asctime)s %(levelname)-5s %(module)s.%(funcName)s:%(lineno)d  %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S')
     fh.setFormatter(formatter)
     logger.addHandler(fh)
     logger.addHandler(ch)

@@ -29,7 +29,7 @@ from sipgate_sms import Sipgate_SMS
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-01-05'
-__updated__ = '2015-01-06'
+__updated__ = '2015-01-07'
 
 DEBUG = 0
 
@@ -55,8 +55,7 @@ def parse_cmd_line():
     program_name = os.path.basename(sys.argv[0])
     program_version = "v%s" % __version__
     program_build_date = str(__updated__)
-    program_version_message = '%%(prog)s %s (%s)' % (
-        program_version, program_build_date)
+    program_version_message = '%%(prog)s %s (%s)' % (program_version, program_build_date)
     program_shortdesc = __import__('__main__').__doc__.split("\n")[1]
     program_license = '''%s
 
@@ -74,16 +73,14 @@ USAGE
 
     try:
         # Setup argument parser
-        parser = ArgumentParser(
-            description=program_license, formatter_class=RawDescriptionHelpFormatter)
+        parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
         parser.add_argument("username", help="sipgate account username")
         parser.add_argument("password", help="sipgate account password")
         parser.add_argument("destination", help="number to send SMS to")
         parser.add_argument("message", help="the message, max 160 characters")
-        parser.add_argument("-v", "--verbose", dest="verbose",
-                            action="count", help="set verbosity level [default: %(default)s]")
-        parser.add_argument(
-            '-V', '--version', action='version', version=program_version_message)
+        parser.add_argument("-v", "--verbose", dest="verbose", action="count",
+                            help="set verbosity level [default: %(default)s]")
+        parser.add_argument('-V', '--version', action='version', version=program_version_message)
 
         # Process arguments
         args = parser.parse_args()
