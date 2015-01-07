@@ -9,3 +9,7 @@ My server hoster has a proper monitoring solution running, but they only send em
 
 The check_service and notify_sms packages have been designed such that it should be simple to add your own service checks and SIP providers.
 
+Dependencies
+============
+
+- python-daemon
