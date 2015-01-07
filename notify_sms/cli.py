@@ -104,6 +104,7 @@ USAGE
 
     return args
 
+
 def setup_logging(args):
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
