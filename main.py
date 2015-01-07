@@ -19,6 +19,7 @@ import logging
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 from check_service.generic_tcp_connect import Generic_TCP_connect
+from notify_sms.sipgate_sms import Sipgate_SMS
 
 __all__ = []
 __version__ = 0.1
@@ -47,12 +48,26 @@ def main(argv=None):  # IGNORE:C0111
     for service in services:
         gtc = Generic_TCP_connect(service["host"], service["port"], "TCP")
         success = gtc.run()
-        results.append(success)
+        results.append((success, service["host"], service["port"], "TCP"))
         logger.debug("Host: %s Port: %s Success: %s", service["host"], service["port"], success)
         if not success and not args.forceallchecks:
             break
 
-    return int(not all(results))
+    failed_services = int(not all([x[0] for x in results]))
+
+    if failed_services > 0:
+        msg = "Service(s) failed: %s" % " ".join(["%s:%d(%s)" % (x[1], x[2], x[3]) for x in results if not x[0]])
+        if len(results) < len(services):
+            msg += " (%d checks not run)" % (len(services) - len(results))
+        logger.info(msg)
+        ssms = Sipgate_SMS(args.username, args.password)
+        for msg_slice in range(0, len(msg), 160):
+            message = args.mobile, msg[msg_slice:msg_slice + 160]
+            if args.test:
+                logger.info("Test run - not sending SMS: >>%s<<", message)
+            else:
+                ssms.send(message)
+    return failed_services
 
 
 def parse_cmd_line():
@@ -128,6 +143,7 @@ USAGE
 
 def setup_logging(args):
     logger.setLevel(logging.DEBUG)
+
     ch = logging.StreamHandler()
     fh = logging.FileHandler(args.logfile or LOGFILE)
     formatter = logging.Formatter(
