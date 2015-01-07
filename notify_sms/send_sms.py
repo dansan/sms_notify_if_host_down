@@ -8,14 +8,15 @@
 
 
 class Send_SMS(object):
+
     '''
     Base class for SMS sending function.
     '''
 
     def __init__(self, username, password):
         '''
-        :param str destination: phone number (RFC3824), starting with country code (e.g. 4917712345678)
-        :param str message: the message
+        :param str username: SIP account username
+        :param str password: SIP account password
         :raises Exception: if there was an error connecting (wrong username/password)
         '''
         self.username = username
