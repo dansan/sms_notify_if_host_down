@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-'''
+"""
 sms_notify_if_host_down -- checks multiple hosts/services, sends a text message if down
 
 main is the start module to run the checks and react to downtime.
@@ -10,7 +10,7 @@ main is the start module to run the checks and react to downtime.
 @license:    GPLv3
 @contact:    daniel@admin-box.com
 @deffield    updated: 06.01.2015
-'''
+"""
 
 import sys
 import os
@@ -19,8 +19,8 @@ import logging
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import daemon
 
-from check_service.generic_tcp_connect import Generic_TCP_connect
-from notify_sms.sipgate_sms import Sipgate_SMS
+from check_service.generic_tcp_connect import GenericTCPConnect
+from notify_sms.sipgate_sms import SipgateSMS
 
 __all__ = []
 __version__ = 0.1
@@ -34,8 +34,6 @@ logger = logging.getLogger()
 
 
 def main(argv=None):  # IGNORE:C0111
-    '''Command line options.'''
-
     if argv is None:
         argv = sys.argv
     else:
@@ -64,7 +62,7 @@ def main(argv=None):  # IGNORE:C0111
 def run_checks(args, services):
     results = list()
     for service in services:
-        gtc = Generic_TCP_connect(service["host"], service["port"], "TCP")
+        gtc = GenericTCPConnect(service["host"], service["port"], "TCP")
         success = gtc.run()
         results.append((success, service["host"], service["port"], "TCP"))
         logger.debug("Host: %s Port: %s Success: %s", service["host"], service["port"], success)
@@ -78,7 +76,7 @@ def notify(results, services, args):
     if len(results) < len(services):
         msg += " (%d checks not run)" % (len(services) - len(results))
     logger.info(msg)
-    ssms = Sipgate_SMS(args.username, args.password)
+    ssms = SipgateSMS(args.username, args.password)
     for msg_slice in range(0, len(msg), 160):
         message = args.mobile, msg[msg_slice:msg_slice + 160]
         if args.test:
@@ -140,7 +138,7 @@ USAGE
         return 0
     except Exception, e:
         if DEBUG:
-            raise(e)
+            raise e
         indent = len(program_name) * " "
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
         sys.stderr.write(indent + "  for help use --help")

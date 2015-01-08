@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-'''
+"""
 notify_sms.cli -- Send a short message via SIP provider sipgate.
 
 notify_sms.cli is a module to send a short message to a mobile phone
@@ -16,7 +16,7 @@ english: http://www.sipgate.de/beta/public/static/downloads/basic/api/sipgate_ap
 @license:    GPLv3
 @contact:    daniel@admin-box.com
 @deffield    updated: 05.01.2015
-'''
+"""
 
 import sys
 import os
@@ -37,7 +37,7 @@ logger = logging.getLogger()
 
 
 def main(argv=None):  # IGNORE:C0111
-    '''Send SMS as specified on the command line.'''
+    """Send SMS as specified on the command line."""
 
     if argv is None:
         argv = sys.argv
@@ -96,7 +96,7 @@ USAGE
         return 0
     except Exception, e:
         if DEBUG:
-            raise(e)
+            raise e
         indent = len(program_name) * " "
         logger.error(program_name + ": " + repr(e))
         logger.error(indent + "  for help use --help")
@@ -112,9 +112,6 @@ def setup_logging(args):
         ch.setLevel(logging.DEBUG)
     else:
         ch.setLevel(logging.INFO)
-    formatter = logging.Formatter(
-        fmt='%(asctime)s %(levelname)-5s %(module)s.%(funcName)s:%(lineno)d  %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
     logger.addHandler(ch)
 
 
