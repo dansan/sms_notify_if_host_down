@@ -5,14 +5,17 @@ sigpate_sms -- very basic handling of sending a text message using SIP provider 
 
 Use python-sipgate-xmlrpc for more sophisticated stuff.
 
-@author:     Daniel Tröder
-@copyright:  2015 Daniel Tröder
-@license:    GPLv3
-@contact:    daniel@admin-box.com
 """
 import xmlrpclib
 import logging
 from send_sms import SendSMS
+
+__author__ = "Daniel Tröder"
+__copyright__ = "2015, Daniel Tröder"
+__credits__ = ["Daniel Tröder"]
+__license__ = "GPLv3"
+__maintainer__ = "Daniel Tröder"
+__email__ = "daniel@admin-box.com"
 
 logger = logging.getLogger()
 

@@ -9,13 +9,6 @@ using the XMLRPC API of SIP provider sipgate.de.
 API Documentation on it can be found here: http://www.sipgate.de/basic/api
 The website is in german, but the linked PDF with the API documentation is in
 english: http://www.sipgate.de/beta/public/static/downloads/basic/api/sipgate_api_documentation.pdf
-
-
-@author:     Daniel Tröder
-@copyright:  2015 Daniel Tröder
-@license:    GPLv3
-@contact:    daniel@admin-box.com
-@deffield    updated: 05.01.2015
 """
 
 import sys
@@ -30,6 +23,14 @@ __all__ = []
 __version__ = 0.1
 __date__ = '2015-01-05'
 __updated__ = '2015-01-07'
+
+__author__ = "Daniel Tröder"
+__copyright__ = "2015, Daniel Tröder"
+__credits__ = ["Daniel Tröder"]
+__license__ = "GPLv3"
+__maintainer__ = "Daniel Tröder"
+__email__ = "daniel@admin-box.com"
+__status__ = "Development"
 
 DEBUG = 0
 
