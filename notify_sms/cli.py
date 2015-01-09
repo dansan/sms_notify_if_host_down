@@ -17,7 +17,7 @@ import logging
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-from sipgate_sms import Sipgate_SMS
+from sipgate_sms import SipgateSMS
 
 __all__ = []
 __version__ = 0.1
@@ -48,7 +48,7 @@ def main(argv=None):  # IGNORE:C0111
     setup_logging(args)
 
     try:
-        ssms = Sipgate_SMS(args.username, args.password)
+        ssms = SipgateSMS(args.username, args.password)
         ssms.send(args.mobile, args.message)
     except:
         logger.exception("Could not send message:\n")

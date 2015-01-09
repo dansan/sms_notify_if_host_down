@@ -13,9 +13,11 @@ import logging
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from daemon.daemon import DaemonContext
 from daemon.runner import make_pidlockfile
+import time
 
 from check_service.generic_tcp_connect import GenericTCPConnect
 from notify_sms.sipgate_sms import SipgateSMS
+from notify_sms.msg_count import MsgCount
 
 __all__ = []
 __version__ = 0.1
@@ -55,18 +57,32 @@ def main(argv=None):  # IGNORE:C0111
                 logger.exception("PIDfile creation failed.")
                 exit(1)
         daemon_context.open()
+        logger.info("** STARTING **")
         logger.info("Forked into background with PID %s.", os.getpid())
         if daemon_context.pidfile:
             logger.debug("PIDfile written to '%s'.", args.pidfile)
-    try:
-        results = run_checks(args, services)
-        failed_services = reduce(lambda x, y: x+y, [int(x[0]) for x in results], 0)
-        if failed_services >= args.threshold:
-            notify(results, services, args)
-        return failed_services
-    except Exception, e:
-        logger.exception("Running checks or notifying.")
-        raise e
+
+    failed_services = 0
+    msg_count = MsgCount(args.msglimit)
+
+    while True:
+        try:
+            results = run_checks(args, services)
+            failed_services = reduce(lambda x, y: x + y, [int(x[0]) for x in results], 0)
+            if failed_services >= args.threshold:
+                if msg_count.can_send():
+                    count = notify(results, services, args)
+                    msg_count.update(count)
+                else:
+                    logger.info("Service(s) failed, but didn't send message because limit reached.")
+        except Exception, e:
+            logger.exception("Running checks or notifying.")
+            raise e
+        if args.daemonize:
+            time.sleep(args.interval * 60)
+        else:
+            break
+    return failed_services
 
 
 def run_checks(args, services):
@@ -102,13 +118,16 @@ def notify(results, services, args):
     if len(results) < len(services):
         msg += " (%d checks not run)" % (len(services) - len(results))
     logger.info(msg)
+    count = 0
     ssms = SipgateSMS(args.username, args.password)
     for msg_slice in range(0, len(msg), 160):
-        message = args.mobile, msg[msg_slice:msg_slice + 160]
+        message = msg[msg_slice:msg_slice + 160]
         if args.test:
-            logger.info("Test run - not sending SMS: >>%s<<", message)
+            logger.info("Test run - not sending SMS >>%s<< to >>%s<<", message, args.mobile)
         else:
-            ssms.send(message)
+            ssms.send(args.mobile, message)
+        count += 1
+    return count
 
 
 def parse_cmd_line():
@@ -141,12 +160,17 @@ USAGE
         parser = ArgumentParser(
             description=program_license, formatter_class=RawDescriptionHelpFormatter)
         parser.add_argument("-d", "--daemonize", action="store_true",
-                            help="run in background [default: %(default)s]")
+                            help="run in background (implies -i 1) [default: %(default)s]")
         parser.add_argument('-e', '--threshold', help="notify only if at least x tests fail [default: %(default)s]",
                             type=int, default=1)
         parser.add_argument('-f', '--forceallchecks', action='store_true',
                             help="do not stop running checks after the first one fails [default: %(default)s]")
+        parser.add_argument('-i', '--interval', help="run check(s) every x minutes (implies -d) [default: %(default)s]",
+                            type=int, default=1)
         parser.add_argument('-l', '--logfile', help="set logfile [default: %(default)s]", default=LOGFILE)
+        parser.add_argument('-m', '--msglimit',
+                            help="limit num of msg sent per hour (implies -d) [default: %(default)s]", type=int,
+                            default=1)
         parser.add_argument('-p', '--pidfile', help="set pidfile [default: %(default)s]", default=None)
         group = parser.add_mutually_exclusive_group()
         group.add_argument("-q", "--quiet", action="store_true",
@@ -165,6 +189,19 @@ USAGE
 
         # Process arguments
         args = parser.parse_args()
+
+        if args.interval > 0:
+            args.daemonize = True
+        elif args.interval < 0:
+            parser.error("Invalid interval '%d'." % args.interval)
+
+        if args.msglimit > 1:
+            args.daemonize = True
+
+        if args.daemonize:
+            args.interval = max(1, args.interval)
+            args.msglimit = max(1, args.msglimit)
+
         if args.pidfile:
             if not os.access(os.path.dirname(args.pidfile), os.W_OK):
                 parser.error("PIDfile location ('%s') not writable." % os.path.dirname(args.pidfile))
@@ -185,12 +222,11 @@ USAGE
         # check service format, even if socket class does it too...
         try:
             host, port = service.split(":")
+            if is_valid_service(host, port, parser):
+                port = int(port)
+                services.append({"host": host, "port": port})
         except:
             parser.error("Invalid service '%s'." % service)
-
-        if is_valid_service(host, port, parser):
-            port = int(port)
-            services.append({"host": host, "port": port})
 
     return args, services
 
@@ -249,6 +285,7 @@ def is_valid_hostname(hostname):
         hostname = hostname[:-1]
     allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
     return all(allowed.match(x) for x in hostname.split("."))
+
 
 if __name__ == "__main__":
     if DEBUG:
