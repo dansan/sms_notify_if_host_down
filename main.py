@@ -4,12 +4,6 @@
 sms_notify_if_host_down -- checks multiple hosts/services, sends a text message if down
 
 main is the start module to run the checks and react to downtime.
-
-@author:     Daniel Tröder
-@copyright:  2015 Daniel Tröder
-@license:    GPLv3
-@contact:    daniel@admin-box.com
-@deffield    updated: 06.01.2015
 """
 
 import sys
@@ -26,6 +20,14 @@ __all__ = []
 __version__ = 0.1
 __date__ = '2015-01-06'
 __updated__ = '2015-01-07'
+
+__author__ = "Daniel Tröder"
+__copyright__ = "2015, Daniel Tröder"
+__credits__ = ["Daniel Tröder"]
+__license__ = "GPLv3"
+__maintainer__ = "Daniel Tröder"
+__email__ = "daniel@admin-box.com"
+__status__ = "Development"
 
 DEBUG = 0
 LOGFILE = '/tmp/sms_notify.log'
@@ -60,6 +62,13 @@ def main(argv=None):  # IGNORE:C0111
 
 
 def run_checks(args, services):
+    """
+    run checks on network services
+
+    :param object args: returned by ArgumentParser.parse_args()
+    :param list services: [{host, port}, ...]
+    :return: list results: [(success, host, port, protocol), ...]
+    """
     results = list()
     for service in services:
         gtc = GenericTCPConnect(service["host"], service["port"], "TCP")
@@ -72,6 +81,15 @@ def run_checks(args, services):
 
 
 def notify(results, services, args):
+    """
+    send message about failed service-checks to args.mobile
+
+    :param list results: [(success, host, port, protocol), ...]
+    :param list services: [{host, port}, ...]
+    :param object args: returned by ArgumentParser.parse_args()
+    :return: number of messages sent
+    :rtype: integer
+    """
     msg = "Service(s) failed: %s" % " ".join(["%s:%d(%s)" % (x[1], x[2], x[3]) for x in results if not x[0]])
     if len(results) < len(services):
         msg += " (%d checks not run)" % (len(services) - len(results))
@@ -86,6 +104,11 @@ def notify(results, services, args):
 
 
 def parse_cmd_line():
+    """
+    parse command line, check and set sane values
+
+    :return: tuple (object, list): (returned by ArgumentParser.parse_args() , [{host, port}, ...])
+    """
     program_name = os.path.basename(sys.argv[0])
     program_version = "v%s" % __version__
     program_build_date = str(__updated__)
