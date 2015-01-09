@@ -11,7 +11,8 @@ import os
 import re
 import logging
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
-import daemon
+from daemon.daemon import DaemonContext
+from daemon.runner import make_pidlockfile
 
 from check_service.generic_tcp_connect import GenericTCPConnect
 from notify_sms.sipgate_sms import SipgateSMS
@@ -44,12 +45,19 @@ def main(argv=None):  # IGNORE:C0111
     args, services = parse_cmd_line()
     setup_logging(args)
 
-    logger.debug("Starting with parameters '%s' to check on services '%s'.", args, services)
-
     if args.daemonize:
-        daemon_context = daemon.DaemonContext()
+        daemon_context = DaemonContext()
         daemon_context.files_preserve = [lh.stream for lh in logger.handlers]
+        if args.pidfile:
+            try:
+                daemon_context.pidfile = make_pidlockfile(args.pidfile, 2)
+            except:
+                logger.exception("PIDfile creation failed.")
+                exit(1)
         daemon_context.open()
+        logger.info("Forked into background with PID %s.", os.getpid())
+        if daemon_context.pidfile:
+            logger.debug("PIDfile written to '%s'.", args.pidfile)
     try:
         results = run_checks(args, services)
         failed_services = reduce(lambda x, y: x+y, [int(x[0]) for x in results], 0)
@@ -139,6 +147,7 @@ USAGE
         parser.add_argument('-f', '--forceallchecks', action='store_true',
                             help="do not stop running checks after the first one fails [default: %(default)s]")
         parser.add_argument('-l', '--logfile', help="set logfile [default: %(default)s]", default=LOGFILE)
+        parser.add_argument('-p', '--pidfile', help="set pidfile [default: %(default)s]", default=None)
         group = parser.add_mutually_exclusive_group()
         group.add_argument("-q", "--quiet", action="store_true",
                            help="show errors only on the console [default: %(default)s]")
@@ -156,6 +165,10 @@ USAGE
 
         # Process arguments
         args = parser.parse_args()
+        if args.pidfile:
+            if not os.access(os.path.dirname(args.pidfile), os.W_OK):
+                parser.error("PIDfile location ('%s') not writable." % os.path.dirname(args.pidfile))
+
     except KeyboardInterrupt:
         # handle keyboard interrupt
         return 0
