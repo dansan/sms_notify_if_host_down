@@ -17,11 +17,11 @@ class MsgCount(object):
     Class for counting messages sent in 1 hour.
     """
 
-    def __init__(self, msglimit):
+    def __init__(self, msg_limit):
         """
-        :type msglimit: integer
+        :type msg_limit: integer
         """
-        self.msg_limit = max(0, msglimit)
+        self.msg_limit = max(0, msg_limit)
         self.msg_count = 0
         self.msg_list = dict()
 
