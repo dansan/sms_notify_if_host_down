@@ -113,8 +113,7 @@ def run_checks(args, services):
         gtc = GenericTCPConnect(service["host"], service["port"], "TCP")
         success = gtc.run()
         results.append((success, service["host"], service["port"], "TCP"))
-        logger.debug("Host: %s Port: %s Connected: %s", service["host"], service["port"], success)
-        if not success and not args.force_all_checks:
+        logger.debug("Check %s: %s:%s", "OK" if success else "FAILED", service["host"], service["port"],)
         if not (success or args.force_all_checks):
             break
     return results
@@ -171,22 +170,44 @@ def parse_cmd_line():
 USAGE
 ''' % (program_shortdesc, str(__date__))
 
+    # set defaults, don't use None because the type() is used when reading from a config file
+    defaults = {"daemonize": False, "threshold": 1, "force_all_checks": False, "interval": 1, "logfile": "",
+                "msg_limit": 1, "mobile": "", "password": "", "pid_file": "", "quiet": False,
+                "services": "", "test": False, "username": "", "verbose": False, "write_conf_file": ""}
     try:
+        # check for a config file first
         conf_parser = ArgumentParser(description=__doc__, formatter_class=RawDescriptionHelpFormatter, add_help=False)
         conf_parser.add_argument("-c", "--conf_file",
                                  help="Specify config file, cmdline option overwrite values from file.", metavar="FILE")
         args, remaining_argv = conf_parser.parse_known_args()
+
+        # overwrite defaults with settings from config file
         if args.conf_file:
+            conf_file = args.conf_file
             config = ConfigParser.SafeConfigParser()
             config.read([args.conf_file])
-            defaults = dict(config.items("Defaults"))
+            for option, value in defaults.items():
+                try:
+                    # use type() of options from defaults dict
+                    if type(value) == str:
+                        defaults[option] = config.get("Defaults", option)
+                    elif type(value) == int:
+                        defaults[option] = config.getint("Defaults", option)
+                    elif type(value) == bool:
+                        defaults[option] = config.getboolean("Defaults", option)
+                    elif type(value) == float:
+                        defaults[option] = config.getfloat("Defaults", option)
+                    else:
+                        raise ValueError("Option '%s' is of unknown type '%s'." % (option, type(value)))
+                except:
+                    # option not in config file
+                    pass
+
+            # make list of services from string in config file
             if defaults.get("services"):
                 defaults["services"] = defaults["services"].split()
-        else:
-            defaults = {"daemonize": False, "threshold": 1, "force_all_checks": False, "interval": 1, "logfile": None,
-                        "msg_limit": 1, "mobile": None, "password": None, "pid_file": None, "quiet": False,
-                        "services": None, "test": False, "username": None, "verbose": False, "write_conf_file": None}
 
+        # read remaining cmdline options, overwrite defaults (again)
         parser = ArgumentParser(parents=[conf_parser], description=program_license,
                                 formatter_class=RawDescriptionHelpFormatter)
         parser.set_defaults(**defaults)
@@ -221,6 +242,7 @@ USAGE
         # Process remaining arguments
         args = parser.parse_args(remaining_argv)
 
+        args.conf_file = conf_file
         args.interval = max(1, args.interval)
         args.msg_limit = max(1, args.msg_limit)
 
@@ -246,7 +268,7 @@ USAGE
         return 2
 
     # check for required arguments, as argparse was not instructed to do it
-    if not all([args.mobile, args.services, args.username, args.password]):
+    if not all([args.mobile, args.services, args.username, args.password, type(args.services) == list]):
         parser.error("Missing at least one of the required arguments: -m mobile, -s service, -u username, -p password.")
 
     services = list()
