@@ -78,7 +78,7 @@ def main(argv=None):  # IGNORE:C0111
     while True:
         try:
             results = run_checks(args, services)
-            failed_services = reduce(lambda x, y: x + y, [int(x[0]) for x in results], 0)
+            failed_services = reduce(lambda x, y: x + y, [int(not x[0]) for x in results], 0)
             if failed_services >= args.threshold:
                 if msg_count.can_send():
                     count = notify(results, services, args)
@@ -258,6 +258,9 @@ USAGE
                 services.append({"host": host, "port": port})
         except:
             parser.error("Invalid service '%s'." % service)
+
+    if not args.force_all_checks and args.threshold > 1:
+        parser.error("Threshold cannot be higher than 1 if force_all_checks is off.")
 
     if args.write_conf_file:
         config = ConfigParser.SafeConfigParser()
