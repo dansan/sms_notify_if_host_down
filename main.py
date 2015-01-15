@@ -115,6 +115,7 @@ def run_checks(args, services):
         results.append((success, service["host"], service["port"], "TCP"))
         logger.debug("Host: %s Port: %s Connected: %s", service["host"], service["port"], success)
         if not success and not args.force_all_checks:
+        if not (success or args.force_all_checks):
             break
     return results
 

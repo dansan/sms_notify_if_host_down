@@ -30,13 +30,11 @@ class GenericTCPConnect(CheckService):
         :return: True if success
         :rtype: bool
         """
-        logger.debug("Connecting to '%s', port %d, TCP...", self.host, self.port)
         try:
             s = socket.create_connection(address=(self.host, self.port), timeout=10)
             s.close()
             success = True
         except Exception, e:
             success = False
-            logger.debug("Could not connect: %s", e)
-        logger.debug("... connected: %s", success)
+            logger.debug("Could not connect to %s:%d (TCP): %s", self.host, self.port, e)
         return success
