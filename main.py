@@ -206,7 +206,8 @@ USAGE
             # make list of services from string in config file
             if defaults.get("services"):
                 defaults["services"] = defaults["services"].split()
-
+        else:
+            conf_file = None
         # read remaining cmdline options, overwrite defaults (again)
         parser = ArgumentParser(parents=[conf_parser], description=program_license,
                                 formatter_class=RawDescriptionHelpFormatter)
